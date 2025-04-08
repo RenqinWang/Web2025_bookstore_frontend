@@ -111,10 +111,10 @@ const UserProfile = () => {
   
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Card bordered={false}>
+      <Card>
         <Row gutter={[24, 24]} align="middle">
           <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
-            {isEditing ? (
+            {(
               <Upload
                 name="avatar"
                 listType="picture-card"
@@ -136,18 +136,11 @@ const UserProfile = () => {
                   </div>
                 )}
               </Upload>
-            ) : (
-              <Avatar 
-                src={avatarUrl || null} 
-                size={120} 
-                icon={<UserOutlined />} 
-                alt="用户头像" 
-              />
             )}
           </Col>
           
           <Col xs={24} sm={16}>
-            {isEditing ? (
+            {(
               <Form 
                 form={form}
                 layout="vertical"
@@ -196,63 +189,19 @@ const UserProfile = () => {
                     >
                       保存
                     </Button>
-                    <Button 
-                      onClick={() => {
-                        setIsEditing(false);
-                        setAvatarUrl(currentUser.avatar);
-                      }}
-                    >
-                      取消
-                    </Button>
                   </Space>
                 </Form.Item>
               </Form>
-            ) : (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Title level={3}>{currentUser.name || '未设置姓名'}</Title>
-                  <Button 
-                    type="primary" 
-                    shape="circle" 
-                    icon={<EditOutlined />} 
-                    onClick={() => setIsEditing(true)}
-                  />
-                </div>
-                
-                <Paragraph>
-                  <Text type="secondary" strong>
-                    <MailOutlined style={{ marginRight: 8 }} />
-                    邮箱:
-                  </Text> {currentUser.email || '未设置邮箱'}
-                </Paragraph>
-                
-                <Paragraph>
-                  <Text type="secondary" strong>
-                    <InfoCircleOutlined style={{ marginRight: 8 }} />
-                    角色:
-                  </Text> {currentUser.role === 'admin' ? '管理员' : '活跃用户'}
-                </Paragraph>
-                
-                <Divider />
-                
-                <Title level={4}>自我介绍</Title>
-                <Paragraph>
-                  {currentUser.bio || '暂无自我介绍'}
-                </Paragraph>
-              </>
-            )}
+            ) }
           </Col>
         </Row>
         
         {!isEditing && (
           <>
-            <Divider />
+            <Divider/>
             <Title level={4}>账户信息</Title>
             <Paragraph>
               <Text strong>用户名: </Text> {currentUser.username}
-            </Paragraph>
-            <Paragraph>
-              <Text strong>账户创建时间: </Text> {new Date().toLocaleDateString()}
             </Paragraph>
           </>
         )}

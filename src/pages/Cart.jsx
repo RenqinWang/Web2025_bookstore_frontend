@@ -20,6 +20,7 @@ import {
   LeftOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import MyModal from '../components/MyModal';
 
 const { Title, Text } = Typography;
 
@@ -29,6 +30,8 @@ const Cart = () => {
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // 初始化加载购物车数据
   useEffect(() => {
@@ -61,15 +64,19 @@ const Cart = () => {
   };
   
   // 清空购物车
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+  const handleOk = () => {
+    setIsModalOpen(false);
+    updateLocalStorage([]);
+    message.success('购物车已清空');
+  };
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
   const handleClearCart = () => {
-    Modal.confirm({
-      title: '确认清空购物车？',
-      content: '此操作将删除购物车中的所有商品',
-      onOk: () => {
-        updateLocalStorage([]);
-        message.success('购物车已清空');
-      }
-    });
+    setIsModalOpen(true);
   };
   
   // 提交订单
@@ -209,12 +216,22 @@ const Cart = () => {
             继续购物
           </Button>
           {!isCartEmpty && (
-            <Button 
-              danger 
-              onClick={handleClearCart}
-            >
-              清空购物车
-            </Button>
+            <>
+              <Button 
+                danger 
+                onClick={handleClearCart}
+              >
+                清空购物车
+              </Button>
+              <Modal 
+                title = "是否清空购物车？"
+                open = {isModalOpen}
+                onOk={handleOk}
+                onCancel={handleCancel}
+                >
+                <p>hello</p>
+              </Modal>
+            </>
           )}
         </Space>
       </div>
