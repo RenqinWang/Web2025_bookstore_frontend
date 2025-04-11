@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { books } from '../data/bookData';
+import BookCard from '../components/BookCard';
 
 const { Meta } = Card;
 const { Option } = Select;
@@ -28,7 +29,7 @@ const Home = () => {
   // 获取所有类别用于筛选
   useEffect(() => {
     setCategories([...new Set(books.map(book => book.category))]);
-  });
+  }, []);
   
   
   // 过滤和搜索书籍
@@ -45,10 +46,6 @@ const Home = () => {
     return categoryMatch && searchMatch;
   });
   
-  // 查看书籍详情
-  const viewBookDetails = (bookId) => {
-    navigate(`/book/${bookId}`);
-  };
   
   return (
     <div style={{ marginTop: 32 }}>
@@ -89,29 +86,8 @@ const Home = () => {
       </Divider>
       
       <Row gutter={[16, 16]}>
-        {filteredBooks.map(book => (
-          <Col xs={24} sm={12} md={8} lg={6} key={book.id}>
-            <Card
-              hoverable
-              cover={<img alt={book.title} src={book.cover} height={300} style={{ objectFit: 'cover' }} />}
-              onClick={() => viewBookDetails(book.id)}
-            >
-              <Meta
-                title={book.title}
-                description={
-                  <>
-                    <div style={{ marginBottom: 8 }}>
-                      <Tag color="blue">{book.category}</Tag>
-                      <span style={{ float: 'right', color: '#f50', fontWeight: 'bold' }}>
-                        ¥{book.price.toFixed(2)}
-                      </span>
-                    </div>
-                    <div>作者：{book.author}</div>
-                  </>
-                }
-              />
-            </Card>
-          </Col>
+        {filteredBooks.map((book) => (
+          <BookCard key={book.id} {...book} />
         ))}
       </Row>
     </div>

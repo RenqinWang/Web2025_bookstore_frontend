@@ -58,10 +58,6 @@ const Cart = () => {
     updateLocalStorage(updatedCart);
   };
   
-  // 清空购物车
-  const showModal = () => {
-    setIsModalOpen(true);
-  };
   const handleOk = () => {
     setIsModalOpen(false);
     cartStorage.clearCart();
@@ -225,7 +221,7 @@ const Cart = () => {
                 okText="确认"
                 cancelText="取消"
                 >
-                <p>hello</p>
+                <p>记录无法被找回</p>
               </Modal>
             </>
           )}
