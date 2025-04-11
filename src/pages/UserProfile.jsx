@@ -22,6 +22,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { userStorage } from '../utils/storage';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -35,7 +36,7 @@ const UserProfile = () => {
   
   // 加载用户数据
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem('currentUser'));
+    const userInfo = userStorage.getCurrentUser();
     if (userInfo) {
       // 如果用户还没有email和bio字段，添加默认值
       if (!userInfo.email) {
@@ -72,7 +73,7 @@ const UserProfile = () => {
       };
       
       // 保存到本地存储
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      userStorage.updateUserInfo(updatedUser);
       setCurrentUser(updatedUser);
       setIsEditing(false);
       message.success('个人信息已更新');
@@ -114,7 +115,7 @@ const UserProfile = () => {
       <Card>
         <Row gutter={[24, 24]} align="middle">
           <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
-            {(
+            {isEditing ? (
               <Upload
                 name="avatar"
                 listType="picture-card"
@@ -136,11 +137,17 @@ const UserProfile = () => {
                   </div>
                 )}
               </Upload>
+            ) : (
+              <Avatar 
+                src={currentUser.avatar} 
+                size={120} 
+                alt="用户头像" 
+              />
             )}
           </Col>
           
           <Col xs={24} sm={16}>
-            {(
+            {isEditing ? (
               <Form 
                 form={form}
                 layout="vertical"
@@ -189,10 +196,42 @@ const UserProfile = () => {
                     >
                       保存
                     </Button>
+                    <Button 
+                      onClick={() => {
+                        setIsEditing(false);
+                        // 重置表单
+                        form.setFieldsValue({
+                          name: currentUser.name,
+                          email: currentUser.email,
+                          bio: currentUser.bio
+                        });
+                      }}
+                    >
+                      取消
+                    </Button>
                   </Space>
                 </Form.Item>
               </Form>
-            ) }
+            ) : (
+              <div>
+                <Title level={3}>{currentUser.name}</Title>
+                <Paragraph>
+                  <Text type="secondary">
+                    <MailOutlined /> {currentUser.email || '未设置邮箱'}
+                  </Text>
+                </Paragraph>
+                <Paragraph>
+                  {currentUser.bio || '这个人很懒，什么都没写...'}
+                </Paragraph>
+                <Button 
+                  type="primary" 
+                  icon={<EditOutlined />}
+                  onClick={() => setIsEditing(true)}
+                >
+                  编辑资料
+                </Button>
+              </div>
+            )}
           </Col>
         </Row>
         

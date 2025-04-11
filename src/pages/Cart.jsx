@@ -20,7 +20,7 @@ import {
   LeftOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import MyModal from '../components/MyModal';
+import { cartStorage, orderStorage } from '../utils/storage';
 
 const { Title, Text } = Typography;
 
@@ -35,31 +35,26 @@ const Cart = () => {
   
   // 初始化加载购物车数据
   useEffect(() => {
-    const storedCartItems = JSON.parse(localStorage.getItem('cart')) || [];
+    const storedCartItems = cartStorage.getCartItems();
     setCartItems(storedCartItems);
   }, []);
   
   // 更新购物车本地存储
   const updateLocalStorage = (items) => {
-    localStorage.setItem('cart', JSON.stringify(items));
+    cartStorage.setCartItems(items);
     setCartItems(items);
   };
   
   // 移除购物车项
   const handleRemoveItem = (id) => {
-    const updatedCart = cartItems.filter(item => item.id !== id);
+    const updatedCart = cartStorage.removeFromCart(id);
     updateLocalStorage(updatedCart);
     message.success('商品已从购物车中移除');
   };
   
   // 更新购物车项数量
   const handleQuantityChange = (id, quantity) => {
-    const updatedCart = cartItems.map(item => {
-      if (item.id === id) {
-        return { ...item, quantity };
-      }
-      return item;
-    });
+    const updatedCart = cartStorage.updateCartItemQuantity(id, quantity);
     updateLocalStorage(updatedCart);
   };
   
@@ -69,6 +64,7 @@ const Cart = () => {
   };
   const handleOk = () => {
     setIsModalOpen(false);
+    cartStorage.clearCart();
     updateLocalStorage([]);
     message.success('购物车已清空');
   };
@@ -85,14 +81,11 @@ const Cart = () => {
     
     // 模拟API请求延迟
     setTimeout(() => {
-      // 获取已有订单或创建新订单数组
-      const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
-      
       // 创建新订单
       const newOrder = {
         id: Date.now(),
         items: [...cartItems],
-        totalAmount: calculateTotal(),
+        totalAmount: cartStorage.calculateCartTotal(),
         status: '待发货',
         date: new Date().toISOString(),
         shippingAddress: values.address,
@@ -101,10 +94,10 @@ const Cart = () => {
       };
       
       // 添加新订单并保存
-      existingOrders.push(newOrder);
-      localStorage.setItem('orders', JSON.stringify(existingOrders));
+      orderStorage.addOrder(newOrder);
       
       // 清空购物车
+      cartStorage.clearCart();
       updateLocalStorage([]);
       
       setLoading(false);
@@ -118,9 +111,7 @@ const Cart = () => {
   
   // 计算总价
   const calculateTotal = () => {
-    return cartItems.reduce((sum, item) => {
-      return sum + (item.price * item.quantity);
-    }, 0);
+    return cartStorage.calculateCartTotal();
   };
   
   // 表格列定义
@@ -203,6 +194,7 @@ const Cart = () => {
   
   return (
     <div>
+      {contextHolder}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <Title level={2}>
           <ShoppingCartOutlined style={{ marginRight: 8 }} />
@@ -228,6 +220,10 @@ const Cart = () => {
                 open = {isModalOpen}
                 onOk={handleOk}
                 onCancel={handleCancel}
+                buttonText=""
+                showButton={false}
+                okText="确认"
+                cancelText="取消"
                 >
                 <p>hello</p>
               </Modal>
@@ -265,7 +261,7 @@ const Cart = () => {
                 <Space size="large">
                   <Text>商品总数:</Text>
                   <Text strong>
-                    {cartItems.reduce((sum, item) => sum + item.quantity, 0)} 件
+                    {cartStorage.getCartItemCount()} 件
                   </Text>
                 </Space>
                 <Space size="large">

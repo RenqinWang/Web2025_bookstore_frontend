@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Button, Avatar, Dropdown } from 'antd';
 import { 
-  HomeOutlined, 
   BookOutlined, 
   ShoppingCartOutlined, 
   OrderedListOutlined, 
@@ -72,11 +71,6 @@ const MainLayout = ({ children }) => {
           mode="inline"
           defaultSelectedKeys={[location.pathname]}
           items={[
-            // {
-            //   key: '/',
-            //   icon: <HomeOutlined />,
-            //   label: <Link to="/">主页</Link>,
-            // },
             {
               key: '/',
               icon: <BookOutlined />,

@@ -3,6 +3,7 @@ import { Form, Input, Button, Checkbox, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { users } from '../data/bookData';
+import { userStorage } from '../utils/storage';
 
 const { Title } = Typography;
 
@@ -12,7 +13,7 @@ const Login = () => {
   
   // 检查是否已登录
   useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
+    const currentUser = userStorage.getCurrentUser();
     if (currentUser) {
       navigate('/');
     }
@@ -33,7 +34,7 @@ const Login = () => {
         // 登录成功
         const userInfo = { ...user };
         delete userInfo.password; // 不存储密码
-        localStorage.setItem('currentUser', JSON.stringify(userInfo));
+        userStorage.setCurrentUser(userInfo);
         message.success('登录成功！');
         navigate('/');
       } else {

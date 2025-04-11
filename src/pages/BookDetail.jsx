@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { books } from '../data/bookData';
+import { cartStorage, favoriteStorage } from '../utils/storage';
 
 const { Title, Paragraph } = Typography;
 
@@ -33,6 +34,7 @@ const BookDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [book, setBook] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     // 查找当前书籍
@@ -40,41 +42,22 @@ const BookDetail = () => {
     
     if (currentBook) {
       setBook(currentBook);
+      // 检查是否已收藏
+      setIsFavorite(favoriteStorage.isFavorite(currentBook.id));
     } else {
       messageApi.info('找不到该书籍');
       navigate('/');
     }
-  }, [id]);
+  }, [id, navigate, messageApi]);
   
   // 处理添加到购物车
   const handleAddToCart = () => {
     if (!book) return;
     
-    // 从本地存储获取购物车
-    const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+    // 使用工具类添加商品到购物车
+    cartStorage.addToCart(book, quantity);
     
-    // 检查书籍是否已在购物车中
-    const existingItem = cartItems.find(item => item.id === book.id);
-    
-    if (existingItem) {
-      // 更新数量
-      existingItem.quantity += quantity;
-    } else {
-      // 添加新项目
-      cartItems.push({
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        price: book.price,
-        cover: book.cover,
-        quantity: quantity
-      });
-    }
-    
-    // 保存回本地存储
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-    
-    // 显示成功消息,
+    // 显示成功消息
     messageApi.info(`已将 ${quantity} 本《${book.title}》添加到购物车`);
   };
   
@@ -82,6 +65,21 @@ const BookDetail = () => {
   const handleBuyNow = () => {
     handleAddToCart();
     navigate('/cart');
+  };
+  
+  // 处理收藏/取消收藏
+  const handleToggleFavorite = () => {
+    if (!book) return;
+    
+    if (isFavorite) {
+      favoriteStorage.removeFromFavorites(book.id);
+      setIsFavorite(false);
+      messageApi.info(`已取消收藏《${book.title}》`);
+    } else {
+      favoriteStorage.addToFavorites(book);
+      setIsFavorite(true);
+      messageApi.info(`已收藏《${book.title}》`);
+    }
   };
   
   if (!book) {
@@ -187,6 +185,17 @@ const BookDetail = () => {
             }}
           >
             立即购买
+          </Button>
+          <Button 
+            type={isFavorite ? "primary" : "default"}
+            size="large" 
+            icon={isFavorite ? <HeartFilled /> : <HeartOutlined />}
+            onClick={handleToggleFavorite}
+            style={{
+              flex: "auto",
+            }}
+          >
+            {isFavorite ? "已收藏" : "收藏"}
           </Button>
       </Row>
       
