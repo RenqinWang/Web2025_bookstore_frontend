@@ -12,6 +12,7 @@ import {
   Tag,
   message,
   Breadcrumb,
+  Spin
 } from 'antd';
 import { 
   ShoppingCartOutlined, 
@@ -23,8 +24,7 @@ import {
   FileTextOutlined
 } from '@ant-design/icons';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { books } from '../data/bookData';
-import { cartStorage, favoriteStorage } from '../utils/storage';
+import { bookService, cartService, favoriteService } from '../services';
 
 const { Title, Paragraph } = Typography;
 
@@ -33,57 +33,87 @@ const BookDetail = () => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // 获取图书详情
   useEffect(() => {
-    // 查找当前书籍
-    const currentBook = books.find((book) => book.id === parseInt(id));
-    
-    if (currentBook) {
-      setBook(currentBook);
-      // 检查是否已收藏
-      setIsFavorite(favoriteStorage.isFavorite(currentBook.id));
-    } else {
-      messageApi.info('找不到该书籍');
-      navigate('/');
-    }
+    const fetchBookDetail = async () => {
+      setLoading(true);
+      try {
+        const bookData = await bookService.getBookById(parseInt(id));
+        setBook(bookData);
+        setIsFavorite(bookData.is_favorite);
+      } catch (error) {
+        messageApi.error('获取图书详情失败：' + (error.message || '未知错误'));
+        console.error('获取图书详情失败:', error);
+        
+        // 如果获取失败，返回首页
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookDetail();
   }, [id, navigate, messageApi]);
   
   // 处理添加到购物车
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!book) return;
     
-    // 使用工具类添加商品到购物车
-    cartStorage.addToCart(book, quantity);
-    
-    // 显示成功消息
-    messageApi.info(`已将 ${quantity} 本《${book.title}》添加到购物车`);
-  };
-  
-  // 处理立即购买
-  const handleBuyNow = () => {
-    handleAddToCart();
-    navigate('/cart');
-  };
-  
-  // 处理收藏/取消收藏
-  const handleToggleFavorite = () => {
-    if (!book) return;
-    
-    if (isFavorite) {
-      favoriteStorage.removeFromFavorites(book.id);
-      setIsFavorite(false);
-      messageApi.info(`已取消收藏《${book.title}》`);
-    } else {
-      favoriteStorage.addToFavorites(book);
-      setIsFavorite(true);
-      messageApi.info(`已收藏《${book.title}》`);
+    try {
+      await cartService.addToCart(book.id, quantity);
+      messageApi.success(`已将 ${quantity} 本《${book.title}》添加到购物车`);
+    } catch (error) {
+      messageApi.error('添加到购物车失败：' + (error.message || '未知错误'));
+      console.error('添加到购物车失败:', error);
     }
   };
   
+  // 处理立即购买
+  const handleBuyNow = async () => {
+    try {
+      await handleAddToCart();
+      navigate('/cart');
+    } catch (error) {
+      console.error('购买失败:', error);
+    }
+  };
+  
+  // 处理收藏/取消收藏
+  const handleToggleFavorite = async () => {
+    if (!book) return;
+    
+    try {
+      if (isFavorite) {
+        await favoriteService.removeFavorite(book.id);
+        setIsFavorite(false);
+        messageApi.success(`已取消收藏《${book.title}》`);
+      } else {
+        await favoriteService.addFavorite(book.id);
+        setIsFavorite(true);
+        messageApi.success(`已收藏《${book.title}》`);
+      }
+    } catch (error) {
+      messageApi.error((isFavorite ? '取消收藏' : '收藏') + '失败：' + (error.message || '未知错误'));
+      console.error('收藏操作失败:', error);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '500px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+  
   if (!book) {
-    return <div>加载中...</div>;
+    return <div>找不到该书籍</div>;
   }
   
   return (
@@ -104,7 +134,7 @@ const BookDetail = () => {
       <Row gutter={[32, 16]}>
         <Col xs={24} md={10}>
           <Image
-            src={book.cover}
+            src={book.cover_url}
             alt={book.title}
             style={{ width: '100%', objectFit: 'cover' }}
           />
@@ -114,9 +144,9 @@ const BookDetail = () => {
           <Title level={2}>{book.title}</Title>
           
           <Paragraph>
-            <Tag color="blue">{book.category}</Tag>
-            <span style={{ marginLeft: 8 }}>{book.publishDate} 出版</span>
-            <span style={{ marginLeft: 8 }}>{book.pages} 页</span>
+            <Tag color="blue">{book.category.name}</Tag>
+            {book.publishDate && <span style={{ marginLeft: 8 }}>{book.publishDate} 出版</span>}
+            {book.pages && <span style={{ marginLeft: 8 }}>{book.pages} 页</span>}
           </Paragraph>
           
           <div style={{ marginBottom: 16 }}>
@@ -135,9 +165,9 @@ const BookDetail = () => {
           
           <Descriptions bordered column={1} size="small" style={{ marginBottom: 24 }}>
             <Descriptions.Item label="作者">{book.author}</Descriptions.Item>
-            <Descriptions.Item label="出版日期">{book.publishDate}</Descriptions.Item>
-            <Descriptions.Item label="页数">{book.pages} 页</Descriptions.Item>
-            <Descriptions.Item label="分类">{book.category}</Descriptions.Item>
+            {book.publishDate && <Descriptions.Item label="出版日期">{book.publishDate}</Descriptions.Item>}
+            {book.pages && <Descriptions.Item label="页数">{book.pages} 页</Descriptions.Item>}
+            <Descriptions.Item label="分类">{book.category.name}</Descriptions.Item>
           </Descriptions>
         </Col>
       </Row>
@@ -150,7 +180,7 @@ const BookDetail = () => {
         <InputNumber 
           min={1} 
           max={99} 
-          defaultValue={quantity} 
+          value={quantity} 
           onChange={(value) => setQuantity(value)} 
         />
       </div>

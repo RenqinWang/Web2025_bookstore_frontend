@@ -1,49 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Checkbox, Card, message, Typography } from 'antd';
+import { Form, Input, Button, Checkbox, Card, message, Typography, Modal } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { users } from '../data/bookData';
-import { userStorage } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services';
 
 const { Title } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerForm] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
   
   // 检查是否已登录
   useEffect(() => {
-    const currentUser = userStorage.getCurrentUser();
-    if (currentUser) {
+    if (isAuthenticated) {
       navigate('/');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
   
   // 处理登录操作
-  const handleLogin = (values) => {
+  const handleLogin = async (values) => {
     setLoading(true);
     
-    // 模拟登录延迟
-    setTimeout(() => {
-      const { username, password } = values;
-      const user = users.find(
-        (u) => u.username === username && u.password === password
-      );
-      
-      if (user) {
-        // 登录成功
-        const userInfo = { ...user };
-        delete userInfo.password; // 不存储密码
-        userStorage.setCurrentUser(userInfo);
-        message.success('登录成功！');
-        navigate('/');
-      } else {
-        // 登录失败
-        message.error('用户名或密码错误！');
-      }
-      
+    try {
+      const { username, password, remember } = values;
+      await login(username, password, remember);
+      messageApi.success('登录成功！');
       setLoading(false);
-    }, 1000);
+      setTimeout(() => navigate('/'), 0);
+    } catch (error) {
+      messageApi.error(error.message || '登录失败，请检查用户名和密码');
+      console.error('登录失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 注册处理
+  const handleRegister = async (values) => {
+    setRegisterLoading(true);
+    try {
+      await authService.register(values);
+      messageApi.success('注册成功，请登录！');
+      setRegisterModalVisible(false);
+      registerForm.resetFields();
+    } catch (error) {
+      messageApi.error(error.message || '注册失败，请检查信息');
+    } finally {
+      setRegisterLoading(false);
+    }
   };
   
   return (
@@ -54,6 +64,7 @@ const Login = () => {
       alignItems: 'center',
       background: '#f0f2f5' 
     }}>
+      {contextHolder}
       <Card 
         style={{ 
           width: 400, 
@@ -78,7 +89,7 @@ const Login = () => {
           >
             <Input 
               prefix={<UserOutlined />} 
-              placeholder="用户名: admin 或 user" 
+              placeholder="用户名" 
             />
           </Form.Item>
           
@@ -88,7 +99,7 @@ const Login = () => {
           >
             <Input.Password 
               prefix={<LockOutlined />}
-              placeholder="密码: admin123 或 user123"
+              placeholder="密码"
             />
           </Form.Item>
           
@@ -96,10 +107,12 @@ const Login = () => {
             <Form.Item name="remember" valuePropName="checked" noStyle>
               <Checkbox>记住我</Checkbox>
             </Form.Item>
-            
-            <a href="#" style={{ float: 'right' }}>
-              忘记密码
-            </a>
+            <div style={{ float: 'right', display: 'flex', gap: 8 }}>
+              {/* <a href="#">忘记密码</a> */}
+              <Button type="link" style={{ padding: 0 }} onClick={() => setRegisterModalVisible(true)}>
+                注册新用户
+              </Button>
+            </div>
           </Form.Item>
           
           <Form.Item>
@@ -114,6 +127,54 @@ const Login = () => {
           </Form.Item>
         </Form>
       </Card>
+      {/* 注册弹窗 */}
+      <Modal
+        title="注册新用户"
+        open={registerModalVisible}
+        onCancel={() => { setRegisterModalVisible(false); registerForm.resetFields(); }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={registerForm}
+          layout="vertical"
+          onFinish={handleRegister}
+          size="large"
+          onValuesChange={(changed, all) => { console.log('changed:', changed, 'all:', all); }}
+        >
+          <Form.Item
+            name="username"
+            label="用户名"
+            rules={[{ required: true, message: '请输入用户名' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="用户名" autoComplete="username" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="密码"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="密码" autoComplete="new-password" />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="姓名"
+            rules={[{ required: true, message: '请输入姓名' }]}
+          >
+            <Input placeholder="姓名" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="邮箱"
+            rules={[{ required: true, type: 'email', message: '请输入有效邮箱' }]}
+          >
+            <Input placeholder="邮箱" autoComplete="email" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={registerLoading} style={{ width: '100%' }}>注册</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

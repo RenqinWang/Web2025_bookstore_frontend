@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Button, Avatar, Dropdown } from 'antd';
 import { 
   BookOutlined, 
@@ -10,6 +10,7 @@ import {
   MenuFoldOutlined
 } from '@ant-design/icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Header, Sider, Content } = Layout;
 
@@ -17,14 +18,16 @@ const MainLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // 模拟当前登录用户信息
-  const currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+  const { currentUser, logout } = useAuth();
   
   // 处理登出
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('登出失败:', error);
+    }
   };
   
   // 用户菜单项
@@ -32,7 +35,8 @@ const MainLayout = ({ children }) => {
     {
       key: 'profile',
       label: '个人信息',
-      icon: <UserOutlined />
+      icon: <UserOutlined />,
+      onClick: () => navigate('/profile')
     },
     {
       key: 'logout',
@@ -76,6 +80,19 @@ const MainLayout = ({ children }) => {
               icon: <BookOutlined />,
               label: <Link to="/">书籍列表</Link>,
             },
+            // 管理员专属菜单
+            ...(currentUser.role === 'admin' ? [
+              {
+                key: '/book-management',
+                icon: <BookOutlined style={{ color: '#faad14' }} />,
+                label: <Link to="/book-management">图书管理</Link>,
+              },
+              {
+                key: '/user-management',
+                icon: <UserOutlined style={{ color: '#d4380d' }} />,
+                label: <Link to="/user-management">用户管理</Link>,
+              }
+            ] : []),
             {
               key: '/cart',
               icon: <ShoppingCartOutlined />,
@@ -89,7 +106,7 @@ const MainLayout = ({ children }) => {
             {
               key: '/profile',
               icon: <UserOutlined/>,
-              label: < Link to="/profile">个人信息</Link>
+              label: <Link to="/profile">个人信息</Link>
             },
           ]}
         />
