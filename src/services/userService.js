@@ -167,6 +167,69 @@ const userService = {
       console.error('禁用用户错误:', error);
       throw error;
     }
+  },
+
+  /**
+   * 启用用户（仅管理员）
+   * @param {number} userId 用户ID
+   * @returns {Promise}
+   */
+  enableUser: async (userId) => {
+    try {
+      const response = await axios.post(`${API_URL}/admin/users/${userId}/enable`, {}, { withCredentials: true });
+      if (response.data.code === 200) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || '启用用户失败');
+      }
+    } catch (error) {
+      console.error('启用用户错误:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取个人购书统计
+   * @param {Object} params 可选参数 {start_date, end_date}
+   * @returns {Promise} 统计数据
+   */
+  getPurchaseStatistics: async (params = {}) => {
+    try {
+      const response = await axios.get(`${API_URL}/users/statistics/purchases`, {
+        params,
+        withCredentials: true
+      });
+      if (response.data.code === 200) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || '获取购书统计失败');
+      }
+    } catch (error) {
+      console.error('获取购书统计错误:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取用户消费榜（管理员）
+   * @param {Object} params 可选参数 {start_date, end_date, limit}
+   * @returns {Promise} 消费榜数据
+   */
+  getTopUsers: async (params = {}) => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/statistics/top-users`, {
+        params,
+        withCredentials: true
+      });
+      if (response.data.code === 200) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || '获取消费榜失败');
+      }
+    } catch (error) {
+      console.error('获取消费榜错误:', error);
+      throw error;
+    }
   }
 };
 

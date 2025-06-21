@@ -57,6 +57,17 @@ const UserManagement = () => {
     }
   };
 
+  // 启用用户
+  const handleEnable = async (id) => {
+    try {
+      await userService.enableUser(id);
+      messageApi.success('用户已启用');
+      fetchUsers();
+    } catch (error) {
+      messageApi.error('启用用户失败: ' + (error.message || '未知错误'));
+    }
+  };
+
   // 打开编辑弹窗
   const handleEdit = (record) => {
     setEditingUser(record);
@@ -101,6 +112,11 @@ const UserManagement = () => {
         {record.status !== 'disabled' && (
           <Popconfirm title="确定要禁用该用户吗？" onConfirm={() => handleDisable(record.id)} okText="禁用" cancelText="取消">
             <Button icon={<StopOutlined />} size="small">禁用</Button>
+          </Popconfirm>
+        )}
+        {record.status === 'disabled' && (
+          <Popconfirm title="确定要启用该用户吗？" onConfirm={() => handleEnable(record.id)} okText="启用" cancelText="取消">
+            <Button type="primary" size="small">启用</Button>
           </Popconfirm>
         )}
       </Space>

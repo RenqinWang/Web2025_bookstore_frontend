@@ -10,6 +10,8 @@ import Orders from '../pages/Orders';
 import UserProfile from '../pages/UserProfile';
 import BookManagement from '../pages/BookManagement';
 import UserManagement from '../pages/UserManagement';
+import Statistics from '../pages/Statistics';
+import OrderManagement from '../pages/OrderManagement';
 
 // 权限控制组件
 const PrivateRoute = ({ children }) => {
@@ -114,6 +116,30 @@ export default function Routers() {
                             <AdminRoute>
                                 <MainLayout>
                                 <UserManagement />
+                                </MainLayout>
+                            </AdminRoute>
+                        </PrivateRoute>
+                        } 
+                    />
+                    
+                    <Route 
+                        path="/statistics" 
+                        element={
+                        <PrivateRoute>
+                            <MainLayout>
+                            <Statistics />
+                            </MainLayout>
+                        </PrivateRoute>
+                        } 
+                    />
+                    
+                    <Route 
+                        path="/order-management" 
+                        element={
+                        <PrivateRoute>
+                            <AdminRoute>
+                                <MainLayout>
+                                <OrderManagement />
                                 </MainLayout>
                             </AdminRoute>
                         </PrivateRoute>

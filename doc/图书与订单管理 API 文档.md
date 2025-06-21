@@ -70,6 +70,8 @@ http://localhost:5173/api
             "id": 1,
             "name": "编程"
           },
+          "stock": 100,
+          "isbn": "978-7-123-45678-9"
         },
         // 更多书籍...
       ]
@@ -111,6 +113,8 @@ http://localhost:5173/api
         "id": 1,
         "name": "编程"
       },
+      "stock": 100,
+      "isbn": "978-7-123-45678-9",
       "is_favorite": false  // 当前用户是否已收藏，需要登录状态才能准确获取
     }
   }
@@ -165,10 +169,12 @@ http://localhost:5173/api
     "title": "书名",
     "author": "作者",
     "price": 79.9,
-    "cover": "https://example.com/cover.jpg", // 可选
-    "description": "书籍描述", // 可选
-    "rating": 4.8, // 可选
-    "category_id": 1
+    "cover": "https://example.com/cover.jpg",
+    "description": "书籍描述",
+    "rating": 4.8,
+    "category_id": 1,
+    "stock": 100,
+    "isbn": "978-7-123-45678-9"
   }
   ```
 
@@ -189,7 +195,9 @@ http://localhost:5173/api
       "category": {
         "id": 1,
         "name": "编程"
-      }
+      },
+      "stock": 100,
+      "isbn": "978-7-123-45678-9"
     }
   }
   ```
@@ -212,7 +220,9 @@ http://localhost:5173/api
     "cover": "https://example.com/newcover.jpg", // 可选
     "description": "新描述", // 可选
     "rating": 4.9, // 可选
-    "category_id": 2 // 可选
+    "category_id": 2, // 可选
+    "stock": 80, // 可选
+    "isbn": "978-7-123-45678-9" // 可选
   }
   ```
 
@@ -233,7 +243,9 @@ http://localhost:5173/api
       "category": {
         "id": 2,
         "name": "科技"
-      }
+      },
+      "stock": 80,
+      "isbn": "978-7-123-45678-9"
     }
   }
   ```
@@ -669,8 +681,6 @@ http://localhost:5173/api
 
   json
 
-  复制
-
   ```
   {
     "code": 200,
@@ -702,6 +712,9 @@ http://localhost:5173/api
   - `status`：(可选) 订单状态过滤。
   - `page`：(可选) 页码，默认1。
   - `page_size`：(可选) 每页数量，默认10。
+  - `query`：(可选，模糊搜索，支持订单号、收货人、手机号、书名等)
+  - `start_date`：(可选，格式：YYYY-MM-DD)
+  - `end_date`：(可选，格式：YYYY-MM-DD)
 
 - **响应示例**：
 
@@ -804,7 +817,7 @@ http://localhost:5173/api
 
 将指定订单的状态从"待支付"修改为"已取消"。
 
-- **请求路径**：`/api/orders/{id}/cancel`
+- **请求路径**：`/orders/{id}/cancel`
 
 - **请求方法**：`POST`
 
@@ -859,6 +872,97 @@ http://localhost:5173/api
 }
 ```
 
+#### 5.5 获取所有用户订单（仅管理员）
+
+获取系统中所有用户的订单列表，支持多种过滤条件和分页展示。
+
+- **请求路径**：`/admin/orders`
+
+- **请求方法**：`GET`
+
+- **权限要求**：仅管理员可用
+
+- **请求头**：*浏览器自动携带 Session Cookie*
+
+- **请求参数**：
+
+  - `status`：(可选) 订单状态过滤（如：待支付、已支付、已发货、已完成、已取消）。
+  - `book_title`：(可选) 书籍名称模糊搜索。
+  - `start_date`：(可选) 开始日期，格式：YYYY-MM-DD。
+  - `end_date`：(可选) 结束日期，格式：YYYY-MM-DD。
+  - `page`：(可选) 页码，默认1。
+  - `page_size`：(可选) 每页数量，默认20。
+  - `query`：(可选) 模糊搜索，支持订单号、收货人姓名、联系电话等。
+
+- **响应示例**：
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 156,
+    "page": 1,
+    "page_size": 20,
+    "orders": [
+      {
+        "id": 10001,
+        "order_number": "ORD20230614001",
+        "total_amount": 247.8,
+        "status": "待支付",
+        "created_at": "2023-06-14T10:30:45Z",
+        "user": {
+          "id": 2,
+          "username": "user1",
+          "name": "张三"
+        },
+        "contact_name": "张三",
+        "contact_phone": "13800138000",
+        "shipping_address": "上海市闵行区东川路800号",
+        "items_count": 3
+      },
+      {
+        "id": 10002,
+        "order_number": "ORD20230614002",
+        "total_amount": 159.8,
+        "status": "已完成",
+        "created_at": "2023-06-14T11:15:30Z",
+        "user": {
+          "id": 3,
+          "username": "user2",
+          "name": "李四"
+        },
+        "contact_name": "李四",
+        "contact_phone": "13900139000",
+        "shipping_address": "北京市海淀区中关村大街1号",
+        "items_count": 2
+      }
+      // 更多订单...
+    ]
+  }
+}
+```
+
+- **错误响应**：
+
+```json
+{
+  "code": 403,
+  "message": "权限不足，仅管理员可访问",
+  "data": null
+}
+```
+
+或
+
+```json
+{
+  "code": 401,
+  "message": "请先登录",
+  "data": null
+}
+```
+
 ### 6. 数据库设计
 
 #### 6.1 分类表 (categories)
@@ -882,6 +986,8 @@ http://localhost:5173/api
 | description | TEXT          | 详细描述    | 可空(NULL)                          |
 | rating      | DECIMAL(3,1)  | 评分        | 默认0.0 (范围 0.0~5.0)              |
 | category_id | INT           | 分类ID      | 外键(categories.id), 非空(NOT NULL) |
+| stock       | INT           | 库存量      | 非空(NOT NULL), 默认100              |
+| isbn        | VARCHAR(32)   | ISBN编号    | 可空(NULL), 唯一(UNIQUE)            |
 
 ------
 
@@ -899,7 +1005,7 @@ http://localhost:5173/api
 
 #### 6.4 收藏表 (favorites)
 
-| 字段名     | 类型  | 描述   | 约束                         |
+| 字段名     | 类型 | 描述   | 约束                         |
 |:--------|:----|:-----|:---------------------------|
 | id      | INT | 收藏ID | 主键, 自增                     |
 | user_id | INT | 用户ID | 外键(users.id), 非空(NOT NULL) |
@@ -913,7 +1019,6 @@ http://localhost:5173/api
 |:-----------------|:--------------|:------|:---------------------------------------|
 | id               | INT           | 订单ID  | 主键, 自增                                 |
 | user_id          | INT           | 用户ID  | 外键(users.id), 非空(NOT NULL)             |
-| total_amount     | DECIMAL(10,2) | 总金额   | 非空(NOT NULL), CHECK(total_amount >= 0) |
 | status           | VARCHAR(20)   | 订单状态  | 非空(NOT NULL), 默认'待支付'                  |
 | created_at       | DATETIME      | 创建时间  | 非空(NOT NULL), 默认CURRENT_TIMESTAMP      |
 | contact_name     | VARCHAR(255)  | 收货人姓名 | 非空(NOT NULL)                           |
@@ -930,7 +1035,7 @@ http://localhost:5173/api
 | order_id | INT           | 订单ID     | 外键(orders.id), 非空(NOT NULL)     |
 | book_id  | INT           | 书籍ID     | 外键(books.id), 非空(NOT NULL)      |
 | quantity | INT           | 数量       | 非空(NOT NULL), CHECK(quantity > 0) |
-| price    | DECIMAL(10,2) | 购买时价格 | 非空(NOT NULL), CHECK(price >= 0)   |
+| price    | DECIMAL(10,2) | 购买时单价（下单时该书的单价，历史快照） | 非空(NOT NULL), CHECK(price >= 0)   |
 
 ------
 
@@ -946,4 +1051,90 @@ http://localhost:5173/api
 3. 业务逻辑优化
    - 订单状态默认值设为'待支付'，符合电商流程。
    - 自动记录订单创建时间(`created_at`)。
+   - 订单总金额（total_amount）由后端根据所有订单项的 price * quantity 自动计算并返回，前端无需自行计算。
    - 收藏表保留用户与书籍的长期关联关系。
+
+### 7. 统计与报表相关接口
+
+#### 7.1 热销榜（管理员，按销量排序）
+- **请求路径**：`/admin/statistics/best-sellers`
+- **请求方法**：`GET`
+- **权限要求**：仅管理员
+- **请求参数**：
+  - `start_date`（可选，格式：YYYY-MM-DD）
+  - `end_date`（可选，格式：YYYY-MM-DD）
+  - `limit`（可选，返回前N名，默认10）
+- **响应示例**：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "book": {
+        "id": 1,
+        "title": "深入理解React",
+        "author": "张三",
+        "cover": "https://picsum.photos/id/24/300/400",
+        "isbn": "978-7-123-45678-9"
+      },
+      "sold_quantity": 120
+    }
+  ]
+}
+```
+
+#### 7.2 用户消费榜（管理员，按总金额排序）
+- **请求路径**：`/admin/statistics/top-users`
+- **请求方法**：`GET`
+- **权限要求**：仅管理员
+- **请求参数**：
+  - `start_date`（可选）
+  - `end_date`（可选）
+  - `limit`（可选，默认10）
+- **响应示例**：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "user": {
+        "id": 2,
+        "username": "user1",
+        "name": "张三"
+      },
+      "total_amount": 2345.67
+    }
+  ]
+}
+```
+
+#### 7.3 个人购书统计（顾客）
+- **请求路径**：`/users/statistics/purchases`
+- **请求方法**：`GET`
+- **权限要求**：登录用户
+- **请求参数**：
+  - `start_date`（可选）
+  - `end_date`（可选）
+- **响应示例**：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total_books": 15,
+    "total_amount": 789.00,
+    "books": [
+      {
+        "book": {
+          "id": 1,
+          "title": "深入理解React",
+          "isbn": "978-7-123-45678-9"
+        },
+        "quantity": 3
+      }
+    ]
+  }
+}
+```

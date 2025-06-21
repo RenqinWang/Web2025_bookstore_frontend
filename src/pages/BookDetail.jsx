@@ -165,9 +165,19 @@ const BookDetail = () => {
           
           <Descriptions bordered column={1} size="small" style={{ marginBottom: 24 }}>
             <Descriptions.Item label="作者">{book.author}</Descriptions.Item>
+            <Descriptions.Item label="ISBN">{book.isbn}</Descriptions.Item>
             {book.publishDate && <Descriptions.Item label="出版日期">{book.publishDate}</Descriptions.Item>}
             {book.pages && <Descriptions.Item label="页数">{book.pages} 页</Descriptions.Item>}
             <Descriptions.Item label="分类">{book.category.name}</Descriptions.Item>
+            <Descriptions.Item label="库存">
+              <span style={{ 
+                color: book.stock > 10 ? '#52c41a' : book.stock > 0 ? '#faad14' : '#f5222d',
+                fontWeight: 'bold'
+              }}>
+                {book.stock} 本
+              </span>
+              {book.stock === 0 && <span style={{ marginLeft: 8, color: '#f5222d' }}>(缺货)</span>}
+            </Descriptions.Item>
           </Descriptions>
         </Col>
       </Row>
@@ -179,10 +189,21 @@ const BookDetail = () => {
         <span style={{ marginRight: 10 }}>购买数量：</span>
         <InputNumber 
           min={1} 
-          max={99} 
+          max={Math.min(99, book.stock)} 
           value={quantity} 
           onChange={(value) => setQuantity(value)} 
+          disabled={book.stock === 0}
         />
+        {book.stock > 0 && (
+          <span style={{ marginLeft: 8, color: '#666' }}>
+            库存: {book.stock} 本
+          </span>
+        )}
+        {book.stock === 0 && (
+          <span style={{ marginLeft: 8, color: '#f5222d' }}>
+            暂时缺货
+          </span>
+        )}
       </div>
 
       {/* 购买按钮 */}
@@ -199,6 +220,7 @@ const BookDetail = () => {
             size="large" 
             icon={<ShoppingCartOutlined />}
             onClick={handleAddToCart}
+            disabled={book.stock === 0}
             style={{
               flex: "auto",
             }}
@@ -210,6 +232,7 @@ const BookDetail = () => {
             size="large" 
             icon={<ShoppingOutlined />}
             onClick={handleBuyNow}
+            disabled={book.stock === 0}
             style={{
               flex: "auto",
             }}

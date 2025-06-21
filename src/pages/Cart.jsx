@@ -130,6 +130,10 @@ const Cart = () => {
       
       messageApi.success('订单已提交成功！');
       setCheckoutModalVisible(false);
+
+      await cartService.clearCart();
+      //fetchCartData(); // 重新获取购物车数据
+      messageApi.success('购物车已清空');
       
       // 跳转到订单页面
       navigate('/orders');

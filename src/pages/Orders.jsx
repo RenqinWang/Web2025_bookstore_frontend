@@ -9,7 +9,9 @@ import {
   Empty,
   Modal,
   Spin,
-  message
+  message,
+  Image,
+  Descriptions
 } from 'antd';
 import {
   OrderedListOutlined,
@@ -34,6 +36,18 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [orderDetail, setOrderDetail] = useState(null);
+  
+  // 字段适配函数
+  const adaptOrder = (order) => ({
+    ...order,
+    totalAmount: order.total_amount,
+    date: order.created_at,
+    contactName: order.contact_name,
+    contactPhone: order.contact_phone,
+  });
   
   // 加载订单数据
   useEffect(() => {
@@ -45,15 +59,6 @@ const Orders = () => {
     const fetchOrders = async () => {
       setLoading(true);
       setError(null);
-      
-      // 字段适配函数
-      const adaptOrder = (order) => ({
-        ...order,
-        totalAmount: order.total_amount,
-        date: order.created_at,
-        contactName: order.contact_name,
-        contactPhone: order.contact_phone,
-      });
       
       try {
         console.log('开始获取订单数据...');
@@ -126,6 +131,22 @@ const Orders = () => {
     }
   };
   
+  // 查看订单详情
+  const handleViewDetail = async (orderId) => {
+    setDetailLoading(true);
+    setDetailModalOpen(true);
+    try {
+      const data = await orderService.getOrderById(orderId);
+      // 兼容API返回格式
+      setOrderDetail(data && data.items ? data : (data.data ? data.data : null));
+    } catch (error) {
+      messageApi.error('获取订单详情失败: ' + (error.message || '未知错误'));
+      setOrderDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+  
   // 表格列定义
   const columns = [
     {
@@ -180,6 +201,13 @@ const Orders = () => {
                 取消订单
               </Button>
           )}
+          <Button
+            size="small"
+            onClick={() => handleViewDetail(record.id)}
+            disabled={loading}
+          >
+            查看详情
+          </Button>
         </Space>
       ),
     },
@@ -238,6 +266,79 @@ const Orders = () => {
         onCancel={() => setIsModalOpen(false)}
       >
         <p>金额将会被退还</p>
+      </Modal>
+      
+      <Modal
+        title="订单详情"
+        open={detailModalOpen}
+        onCancel={() => { setDetailModalOpen(false); setOrderDetail(null); }}
+        footer={null}
+        width={700}
+      >
+        {detailLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin size="large" tip="正在加载订单详情..." />
+          </div>
+        ) : orderDetail ? (
+          <div>
+            <Descriptions bordered column={1} size="middle" style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="订单号">{orderDetail.id}</Descriptions.Item>
+              <Descriptions.Item label="下单时间">{new Date(orderDetail.created_at).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="订单金额">¥{orderDetail.total_amount?.toFixed(2)}</Descriptions.Item>
+              <Descriptions.Item label="订单状态">{getStatusTag(orderDetail.status)}</Descriptions.Item>
+              <Descriptions.Item label="收货人">{orderDetail.shipping_info ? orderDetail.shipping_info.contact_name : orderDetail.contact_name}</Descriptions.Item>
+              <Descriptions.Item label="联系电话">{orderDetail.shipping_info ? orderDetail.shipping_info.contact_phone : orderDetail.contact_phone}</Descriptions.Item>
+              <Descriptions.Item label="收货地址">{orderDetail.shipping_info ? orderDetail.shipping_info.shipping_address : orderDetail.shipping_address}</Descriptions.Item>
+            </Descriptions>
+            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>订单书目：</div>
+            <Table
+              dataSource={orderDetail.items || []}
+              rowKey={item => item.id}
+              pagination={false}
+              size="small"
+              bordered
+              columns={[
+                {
+                  title: '封面',
+                  dataIndex: ['book', 'cover'],
+                  key: 'cover',
+                  render: (cover, record) => (
+                    <Image src={cover || (record.book && record.book.cover_url)} alt={record.book?.title} width={60} height={80} style={{ objectFit: 'cover' }} />
+                  ),
+                },
+                {
+                  title: '书名',
+                  dataIndex: ['book', 'title'],
+                  key: 'title',
+                },
+                {
+                  title: '作者',
+                  dataIndex: ['book', 'author'],
+                  key: 'author',
+                },
+                {
+                  title: '单价',
+                  dataIndex: 'price',
+                  key: 'price',
+                  render: price => `¥${price?.toFixed(2)}`,
+                },
+                {
+                  title: '数量',
+                  dataIndex: 'quantity',
+                  key: 'quantity',
+                },
+                {
+                  title: '小计',
+                  dataIndex: 'subtotal',
+                  key: 'subtotal',
+                  render: subtotal => `¥${subtotal?.toFixed(2)}`,
+                },
+              ]}
+            />
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: '#888' }}>暂无详情</div>
+        )}
       </Modal>
     </div>
   );

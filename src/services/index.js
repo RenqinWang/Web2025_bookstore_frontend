@@ -22,4 +22,10 @@ export default {
   favoriteService,
   userService
 };
+
+// export { default as userService } from './userService';
+// export { default as bookService } from './bookService';
+// export { default as orderService } from './orderService';
+// export { default as cartService } from './cartService';
+// export { default as favoriteService } from './favoriteService';
  

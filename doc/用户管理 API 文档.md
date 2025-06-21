@@ -411,6 +411,30 @@ json
 }
 ```
 
+### 2.12 启用用户（仅管理员）
+
+**请求路径**：`/admin/users/{id}/enable`
+
+**请求方法**：`POST`
+
+**权限要求**：仅管理员（role=admin）可用
+
+**请求参数**：无
+
+**响应示例**：
+
+```
+{
+  "code": 200,
+  "message": "用户已启用",
+  "data": {
+    "id": 2,
+    "username": "user",
+    "status": "active"
+  }
+}
+```
+
 ## 3. 数据库设计
 
 ### 3.1 用户表 (users)
@@ -421,9 +445,10 @@ json
 | username | VARCHAR(64)  | 用户名            | 唯一, 非空                           |
 | name     | VARCHAR(64)  | 用户昵称/真实姓名 | 非空                                 |
 | avatar   | VARCHAR(255) | 头像URL           | 默认值 `https://postimg.cc/gXywKMWd` |
-| role     | VARCHAR(20)  | 用户角色          | 默认 'user'。允许 'admin', 'user'    |
+| role     | VARCHAR(20)  | 用户角色          | 默认 'user'。允许 'admin', 'user'   |
 | email    | VARCHAR(64)  | 电子邮箱          | 唯一, 非空                           |
 | bio      | TEXT         | 个人简介          | 可为空                               |
+| status   | VARCHAR(20)  | 用户状态          | 默认'active', 允许'active', 'disabled |
 
 ### 3.2 令牌储存（persistent_logins）
 

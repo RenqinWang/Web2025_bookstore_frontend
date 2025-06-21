@@ -134,6 +134,28 @@ const bookService = {
       console.error('删除图书错误:', error);
       throw error;
     }
+  },
+
+  /**
+   * 获取热销榜（管理员）
+   * @param {Object} params 可选参数 {start_date, end_date, limit}
+   * @returns {Promise} 热销榜数据
+   */
+  getBestSellers: async (params = {}) => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/statistics/best-sellers`, {
+        params,
+        withCredentials: true
+      });
+      if (response.data.code === 200) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || '获取热销榜失败');
+      }
+    } catch (error) {
+      console.error('获取热销榜错误:', error);
+      throw error;
+    }
   }
 };
 

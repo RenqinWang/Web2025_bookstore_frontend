@@ -81,6 +81,8 @@ const BookManagement = () => {
       description: record.description,
       rating: record.rating,
       category_id: record.category?.id,
+      stock: record.stock,
+      isbn: record.isbn,
     });
   };
 
@@ -115,7 +117,21 @@ const BookManagement = () => {
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: '书名', dataIndex: 'title', key: 'title' },
     { title: '作者', dataIndex: 'author', key: 'author' },
+    { title: 'ISBN', dataIndex: 'isbn', key: 'isbn' },
     { title: '价格', dataIndex: 'price', key: 'price', render: (v) => `¥${v}` },
+    { 
+      title: '库存', 
+      dataIndex: 'stock', 
+      key: 'stock', 
+      render: (stock) => (
+        <span style={{ 
+          color: stock > 10 ? '#52c41a' : stock > 0 ? '#faad14' : '#f5222d',
+          fontWeight: 'bold'
+        }}>
+          {stock} 本
+        </span>
+      )
+    },
     { title: '封面', dataIndex: 'cover_url', key: 'cover_url', render: (url) => url ? <img src={url} alt="cover_url" style={{ width: 60, height: 80, objectFit: 'cover' }} /> : '无' },
     { title: '描述', dataIndex: 'description', key: 'description', ellipsis: false },
     { title: '评分', dataIndex: 'rating', key: 'rating' },
@@ -164,7 +180,9 @@ const BookManagement = () => {
         >
           <Form.Item name="title" label="书名" rules={[{ required: true, message: '请输入书名' }]}><Input /></Form.Item>
           <Form.Item name="author" label="作者" rules={[{ required: true, message: '请输入作者' }]}><Input /></Form.Item>
+          <Form.Item name="isbn" label="ISBN" rules={[{ required: true, message: '请输入ISBN' }]}><Input /></Form.Item>
           <Form.Item name="price" label="价格" rules={[{ required: true, message: '请输入价格' }]}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="stock" label="库存" rules={[{ required: true, message: '请输入库存数量' }]}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="cover_url" label="封面图片URL"><Input /></Form.Item>
           <Form.Item name="description" label="描述"><Input.TextArea rows={3} /></Form.Item>
           <Form.Item name="rating" label="评分"><InputNumber min={0} max={5} step={0.1} style={{ width: '100%' }} /></Form.Item>
@@ -192,7 +210,9 @@ const BookManagement = () => {
         >
           <Form.Item name="title" label="书名" rules={[{ required: true, message: '请输入书名' }]}><Input /></Form.Item>
           <Form.Item name="author" label="作者" rules={[{ required: true, message: '请输入作者' }]}><Input /></Form.Item>
+          <Form.Item name="isbn" label="ISBN" rules={[{ required: true, message: '请输入ISBN' }]}><Input /></Form.Item>
           <Form.Item name="price" label="价格" rules={[{ required: true, message: '请输入价格' }]}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
+          <Form.Item name="stock" label="库存" rules={[{ required: true, message: '请输入库存数量' }]}><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="cover_url" label="封面图片URL"><Input /></Form.Item>
           <Form.Item name="description" label="描述"><Input.TextArea rows={3} /></Form.Item>
           <Form.Item name="rating" label="评分"><InputNumber min={0} max={5} step={0.1} style={{ width: '100%' }} /></Form.Item>

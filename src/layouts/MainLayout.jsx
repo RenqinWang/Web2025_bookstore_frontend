@@ -88,6 +88,11 @@ const MainLayout = ({ children }) => {
                 label: <Link to="/book-management">图书管理</Link>,
               },
               {
+                key: '/order-management',
+                icon: <OrderedListOutlined style={{ color: '#722ed1' }} />,
+                label: <Link to="/order-management">订单管理</Link>,
+              },
+              {
                 key: '/user-management',
                 icon: <UserOutlined style={{ color: '#d4380d' }} />,
                 label: <Link to="/user-management">用户管理</Link>,
@@ -102,6 +107,11 @@ const MainLayout = ({ children }) => {
               key: '/orders',
               icon: <OrderedListOutlined />,
               label: <Link to="/orders">我的订单</Link>,
+            },
+            {
+              key: '/statistics',
+              icon: <OrderedListOutlined style={{ color: '#52c41a' }} />,
+              label: <Link to="/statistics">统计数据</Link>,
             },
             {
               key: '/profile',

@@ -97,6 +97,29 @@ const orderService = {
       console.error('取消订单错误:', error);
       throw error;
     }
+  },
+
+  /**
+   * 获取所有用户订单（仅管理员）
+   * @param {Object} params 查询参数
+   * @returns {Promise} 所有用户订单列表数据
+   */
+  getAllOrders: async (params = {}) => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/orders`, {
+        params,
+        withCredentials: true
+      });
+      
+      if (response.data.code === 200) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || '获取所有用户订单失败');
+      }
+    } catch (error) {
+      console.error('获取所有用户订单错误:', error);
+      throw error;
+    }
   }
 };
 
