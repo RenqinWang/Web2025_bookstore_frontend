@@ -80,24 +80,7 @@ const MainLayout = ({ children }) => {
               icon: <BookOutlined />,
               label: <Link to="/">书籍列表</Link>,
             },
-            // 管理员专属菜单
-            ...(currentUser.role === 'admin' ? [
-              {
-                key: '/book-management',
-                icon: <BookOutlined style={{ color: '#faad14' }} />,
-                label: <Link to="/book-management">图书管理</Link>,
-              },
-              {
-                key: '/order-management',
-                icon: <OrderedListOutlined style={{ color: '#722ed1' }} />,
-                label: <Link to="/order-management">订单管理</Link>,
-              },
-              {
-                key: '/user-management',
-                icon: <UserOutlined style={{ color: '#d4380d' }} />,
-                label: <Link to="/user-management">用户管理</Link>,
-              }
-            ] : []),
+            
             {
               key: '/cart',
               icon: <ShoppingCartOutlined />,
@@ -118,6 +101,27 @@ const MainLayout = ({ children }) => {
               icon: <UserOutlined/>,
               label: <Link to="/profile">个人信息</Link>
             },
+            {
+              label: <dev>管理员菜单</dev>
+            },
+            // 管理员专属菜单
+            ...(currentUser.role === 'admin' ? [
+              {
+                key: '/book-management',
+                icon: <BookOutlined style={{ color: '#faad14' }} />,
+                label: <Link to="/book-management">图书管理</Link>,
+              },
+              {
+                key: '/order-management',
+                icon: <OrderedListOutlined style={{ color: '#722ed1' }} />,
+                label: <Link to="/order-management">订单管理</Link>,
+              },
+              {
+                key: '/user-management',
+                icon: <UserOutlined style={{ color: '#d4380d' }} />,
+                label: <Link to="/user-management">用户管理</Link>,
+              }
+            ] : []),
           ]}
         />
       </Sider>

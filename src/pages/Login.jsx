@@ -34,7 +34,18 @@ const Login = () => {
       setLoading(false);
       setTimeout(() => navigate('/'), 0);
     } catch (error) {
-      messageApi.error(error.message || '登录失败，请检查用户名和密码');
+      // 检查是否是用户被禁用的错误
+      if (error.response && error.response.data && error.response.data.code === 403) {
+        messageApi.error({
+          content: error.response.data.message || '用户已被禁用，无法登录',
+          duration: 5, // 显示5秒
+          style: {
+            marginTop: '20vh',
+          },
+        });
+      } else {
+        messageApi.error(error.message || '登录失败，请检查用户名和密码');
+      }
       console.error('登录失败:', error);
     } finally {
       setLoading(false);
@@ -45,7 +56,9 @@ const Login = () => {
   const handleRegister = async (values) => {
     setRegisterLoading(true);
     try {
-      await authService.register(values);
+      // 移除confirmPassword字段，只发送后端需要的字段
+      const { confirmPassword, ...registerData } = values;
+      await authService.register(registerData);
       messageApi.success('注册成功，请登录！');
       setRegisterModalVisible(false);
       registerForm.resetFields();

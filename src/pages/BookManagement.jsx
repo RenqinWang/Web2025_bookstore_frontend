@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Typography } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Typography, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { bookService } from '../services';
 
 const { Option } = Select;
@@ -17,12 +17,26 @@ const BookManagement = () => {
   const [editForm] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [editingBook, setEditingBook] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   // 获取图书和分类
   const fetchBooks = async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
-      const data = await bookService.getBooks({ page, page_size: pageSize });
+      const params = { page, page_size: pageSize };
+      
+      // 添加搜索参数
+      if (searchText) {
+        params.query = searchText;
+      }
+      
+      // 添加分类过滤参数
+      if (categoryFilter !== 'all') {
+        params.category_id = categoryFilter;
+      }
+      
+      const data = await bookService.getBooks(params);
       setBooks(data.books || []);
       setPagination({
         current: data.page || 1,
@@ -51,9 +65,31 @@ const BookManagement = () => {
     // eslint-disable-next-line
   }, []);
 
+  // 当搜索条件或分类过滤变化时重新获取数据
+  useEffect(() => {
+    fetchBooks(pagination.current, pagination.pageSize);
+    // eslint-disable-next-line
+  }, [searchText, categoryFilter]);
+
   // 分页切换
   const handleTableChange = (pagination) => {
     fetchBooks(pagination.current, pagination.pageSize);
+  };
+
+  // 处理搜索
+  const handleSearch = (value) => {
+    setSearchText(value);
+  };
+
+  // 处理分类筛选
+  const handleCategoryChange = (value) => {
+    setCategoryFilter(value);
+  };
+
+  // 重置筛选条件
+  const handleReset = () => {
+    setSearchText('');
+    setCategoryFilter('all');
   };
 
   // 添加图书
@@ -150,6 +186,48 @@ const BookManagement = () => {
     <div>
       {contextHolder}
       <Title level={2} style={{ marginBottom: 24 }}>图书管理</Title>
+      
+      {/* 搜索和筛选区域 */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12}>
+          <Input 
+            placeholder="搜索书籍（书名、作者、描述）..." 
+            prefix={<SearchOutlined />} 
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+            allowClear
+            size="large"
+          />
+        </Col>
+        <Col xs={24} sm={8}>
+          <Select
+            placeholder="选择分类"
+            style={{ width: '100%' }}
+            value={categoryFilter}
+            onChange={handleCategoryChange}
+            size="large"
+          >
+            <Option value="all">全部分类</Option>
+            {categories.length > 0 ? (
+              categories.map(category => (
+                <Option key={category.id} value={category.id}>{category.name}</Option>
+              ))
+            ) : (
+              <Option value="loading" disabled>加载中...</Option>
+            )}
+          </Select>
+        </Col>
+        <Col xs={24} sm={4}>
+          <Button 
+            onClick={handleReset} 
+            size="large" 
+            style={{ width: '100%' }}
+          >
+            重置
+          </Button>
+        </Col>
+      </Row>
+      
       <Button type="primary" icon={<PlusOutlined />} style={{ marginBottom: 16 }} onClick={() => setAddModalVisible(true)}>
         添加图书
       </Button>

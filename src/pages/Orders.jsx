@@ -11,7 +11,11 @@ import {
   Spin,
   message,
   Image,
-  Descriptions
+  Descriptions,
+  Form,
+  Input,
+  DatePicker,
+  Select
 } from 'antd';
 import {
   OrderedListOutlined,
@@ -26,6 +30,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../services';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -39,6 +45,16 @@ const Orders = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [orderDetail, setOrderDetail] = useState(null);
+  const [searchForm] = Form.useForm();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showSizeChanger: true,
+    showQuickJumper: true,
+    showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+  });
+  const [searchParams, setSearchParams] = useState({});
   
   // 字段适配函数
   const adaptOrder = (order) => ({
@@ -50,42 +66,82 @@ const Orders = () => {
   });
   
   // 加载订单数据
+  const fetchOrders = async (params = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await orderService.getOrders(params);
+      // 兼容API返回格式
+      let orderList = [];
+      let total = 0, page = 1, pageSize = 10;
+      if (Array.isArray(data)) {
+        orderList = data;
+        total = data.length;
+      } else if (data && Array.isArray(data.orders)) {
+        orderList = data.orders;
+        total = data.total || 0;
+        page = data.page || 1;
+        pageSize = data.page_size || 10;
+      }
+      setOrders(orderList.map(adaptOrder).sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        pageSize: pageSize,
+        total: total
+      }));
+    } catch (error) {
+      setOrders([]);
+      setError(error.message || '获取订单失败');
+      messageApi.error('获取订单失败: ' + (error.message || '未知错误'));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-    
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log('开始获取订单数据...');
-        const data = await orderService.getOrders();
-        console.log('获取到的订单数据:', data);
-        
-        if (Array.isArray(data)) {
-          setOrders(data.map(adaptOrder).sort((a, b) => new Date(b.date) - new Date(a.date)));
-        } else if (data && Array.isArray(data.orders)) {
-          setOrders(data.orders.map(adaptOrder).sort((a, b) => new Date(b.date) - new Date(a.date)));
-        } else {
-          console.error('订单数据格式不正确:', data);
-          setOrders([]);
-          throw new Error('订单数据格式不正确');
-        }
-      } catch (error) {
-        console.error('获取订单失败:', error);
-        setError(error.message || '获取订单失败');
-        messageApi.error('获取订单失败: ' + (error.message || '未知错误'));
-      } finally {
-        setLoading(false);
-      }
+    fetchOrders({ page: 1, page_size: pagination.pageSize });
+    // eslint-disable-next-line
+  }, [navigate, isAuthenticated]);
+  
+  // 搜索/筛选
+  const handleSearch = (values) => {
+    const params = {
+      page: 1,
+      page_size: pagination.pageSize
     };
-    
-    fetchOrders();
-    //console.log(orders);
-  }, [navigate, isAuthenticated, messageApi]);
+    if (values.status) params.status = values.status;
+    if (values.query) params.query = values.query;
+    if (values.dateRange && values.dateRange.length === 2) {
+      params.start_date = values.dateRange[0].format('YYYY-MM-DD');
+      params.end_date = values.dateRange[1].format('YYYY-MM-DD');
+    }
+    setSearchParams(params);
+    fetchOrders(params);
+  };
+  
+  // 重置
+  const handleReset = () => {
+    searchForm.resetFields();
+    const params = { page: 1, page_size: pagination.pageSize };
+    setSearchParams(params);
+    fetchOrders(params);
+  };
+  
+  // 分页变化
+  const handleTableChange = (paginationInfo) => {
+    const params = {
+      ...searchParams,
+      page: paginationInfo.current,
+      page_size: paginationInfo.pageSize
+    };
+    setSearchParams(params);
+    fetchOrders(params);
+  };
   
   // 获取订单状态标签
   const getStatusTag = (status) => {
@@ -106,24 +162,13 @@ const Orders = () => {
   // 处理取消订单
   const handleCancelOrder = async () => {
     if (!currentOrderId) return;
-    
     setLoading(true);
-    
     try {
-      console.log('开始取消订单, ID:', currentOrderId);
       await orderService.cancelOrder(currentOrderId);
-      
       // 刷新订单列表
-      const updatedOrders = await orderService.getOrders();
-      setOrders(
-        Array.isArray(updatedOrders) 
-          ? updatedOrders.map(adaptOrder).sort((a, b) => new Date(b.date) - new Date(a.date))
-          : updatedOrders.orders.map(adaptOrder).sort((a, b) => new Date(b.date) - new Date(a.date))
-      );
-      
+      fetchOrders(searchParams);
       messageApi.success('订单已成功取消');
     } catch (error) {
-      console.error('取消订单失败:', error);
       messageApi.error('取消订单失败: ' + (error.message || '未知错误'));
     } finally {
       setIsModalOpen(false);
@@ -137,7 +182,6 @@ const Orders = () => {
     setDetailModalOpen(true);
     try {
       const data = await orderService.getOrderById(orderId);
-      // 兼容API返回格式
       setOrderDetail(data && data.items ? data : (data.data ? data.data : null));
     } catch (error) {
       messageApi.error('获取订单详情失败: ' + (error.message || '未知错误'));
@@ -221,6 +265,35 @@ const Orders = () => {
         我的订单
       </Title>
       
+      {/* 筛选表单 */}
+      <Form
+        form={searchForm}
+        layout="inline"
+        onFinish={handleSearch}
+        style={{ marginBottom: 16 }}
+      >
+        <Form.Item name="status" label="订单状态">
+          <Select placeholder="全部" style={{ width: 120 }} allowClear>
+            <Option value="待支付">待支付</Option>
+            <Option value="已发货">已发货</Option>
+            <Option value="已完成">已完成</Option>
+            <Option value="已取消">已取消</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="query" label="搜索">
+          <Input placeholder="订单号/收货人/手机号/书名" allowClear style={{ width: 200 }} />
+        </Form.Item>
+        <Form.Item name="dateRange" label="下单时间">
+          <RangePicker style={{ width: 240 }} />
+        </Form.Item>
+        <Form.Item>
+          <Space>
+            <Button type="primary" htmlType="submit">搜索</Button>
+            <Button onClick={handleReset}>重置</Button>
+          </Space>
+        </Form.Item>
+      </Form>
+      
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px 0' }}>
           <Spin size="large" tip="正在加载订单数据..." />
@@ -230,7 +303,7 @@ const Orders = () => {
           <Text type="danger">{error}</Text>
           <br />
           <Button 
-            onClick={() => window.location.reload()} 
+            onClick={() => fetchOrders(searchParams)} 
             style={{ marginTop: 16 }}
           >
             重试
@@ -253,7 +326,8 @@ const Orders = () => {
           columns={columns}
           dataSource={orders}
           rowKey="id"
-          pagination={{ pageSize: 5 }}
+          pagination={pagination}
+          onChange={handleTableChange}
           style={{ marginBottom: 24 }}
         />
       )}
